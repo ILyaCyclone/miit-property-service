@@ -10,13 +10,14 @@ import java.sql.SQLException;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import javax.sql.DataSource;
 
-
+@WebServlet("/*")
 public class PropertyServlet extends HttpServlet {
     //@formatter:off
     private static final String CONTENT_TYPE = "text/plain; charset=UTF-8"
@@ -43,7 +44,7 @@ public class PropertyServlet extends HttpServlet {
 
         boolean environmentProperty = url.contains("/env/");
 
-        boolean json = url.contains("/json/");
+        boolean json = url.contains("/json/") || request.getParameter("json") != null;
         boolean multiple = url.contains(",");
 
         String propertyValue = null;
