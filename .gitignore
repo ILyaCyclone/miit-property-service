@@ -1,10 +1,7 @@
-target/
+*/target/
 
-.data/
-deploy/
+*/.idea/
+*/*.iml
 
-.idea/
-*.iml
-
-*.class
-*.jar
+*/*.class
+*/*.jar
