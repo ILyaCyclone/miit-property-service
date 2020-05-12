@@ -1,0 +1,10 @@
+target/
+
+.data/
+deploy/
+
+.idea/
+*.iml
+
+*.class
+*.jar
