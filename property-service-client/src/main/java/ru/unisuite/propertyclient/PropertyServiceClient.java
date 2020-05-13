@@ -1,8 +1,11 @@
 package ru.unisuite.propertyclient;
 
 import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
@@ -11,7 +14,7 @@ import java.util.Map;
 import java.util.stream.IntStream;
 
 public class PropertyServiceClient {
-    private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(PropertyServiceClient.class);
+    private static final Logger logger = LoggerFactory.getLogger(PropertyServiceClient.class);
 
     private static final String BASE_URL_PROPERTY_NAME = "ru.unisuite.propertyclient.baseurl";
     private static final String BASE_URL_ENV_NAME = propertyNameToEnvName(BASE_URL_PROPERTY_NAME);
@@ -32,7 +35,17 @@ public class PropertyServiceClient {
             // remove trailing slash
             propertyServiceBaseUrl = propertyServiceBaseUrl.substring(0, propertyServiceBaseUrl.length() - 1);
         }
+
+        try {
+            new URL(propertyServiceBaseUrl); // validate URL
+        } catch (MalformedURLException e) {
+            throw new PropertyServiceClientException("propertyServiceBaseUrl is not set correctly: '"
+                    + propertyServiceBaseUrl + "'. Should be set to property service absolute url.");
+        }
+
         this.propertyServiceUrl = propertyServiceBaseUrl;
+
+        logger.debug("Property service client is created with propertyServiceBaseUrl: {}", propertyServiceBaseUrl);
     }
 
 
@@ -90,6 +103,6 @@ public class PropertyServiceClient {
     }
 
     private static String propertyNameToEnvName(String s) {
-        return s.toUpperCase().replaceAll("\\.", "_");
+        return s.toUpperCase().replace('.', '_');
     }
 }

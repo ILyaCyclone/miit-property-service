@@ -20,7 +20,8 @@ import javax.sql.DataSource;
 @WebServlet("/*")
 public class PropertyServlet extends HttpServlet {
     //@formatter:off
-    private static final String CONTENT_TYPE = "text/plain; charset=UTF-8"
+    private static final String CONTENT_TYPE_TEXT = "text/plain;charset=UTF-8"
+        , CONTENT_TYPE_JSON = "application/json"
         , DATA_SOURCE = "jdbc/ds_basic"
         , DELIMITER = ","
         , PROPERTY_QUERY = "select to_char(wpms_env_wp.get_property(?)) as property_value from dual"
@@ -107,7 +108,7 @@ public class PropertyServlet extends HttpServlet {
                         result = escapeDelimiter(result);
                         sb.append(result);
                     } else {
-                        sb.append("\"" + propertyKeys[i] + "\" : \"" + result + "\"");
+                        sb.append('"' + propertyKeys[i] + "\" : \"" + result + '"');
                     }
                     i++;
                 }
@@ -118,7 +119,7 @@ public class PropertyServlet extends HttpServlet {
             }
 
         } catch (Exception e) {
-            throw new RuntimeException("PropertyService failed for url '" + url + '\'');
+            throw new RuntimeException("PropertyService failed for url '" + url + '\'', e);
         } finally {
             if (rs != null) {
                 try {
@@ -142,7 +143,7 @@ public class PropertyServlet extends HttpServlet {
             }
         }
 
-        response.setContentType(CONTENT_TYPE);
+        response.setContentType(json ? CONTENT_TYPE_JSON : CONTENT_TYPE_TEXT);
         PrintWriter out = response.getWriter();
         out.print(propertyValue);
         out.close();
@@ -163,7 +164,7 @@ public class PropertyServlet extends HttpServlet {
     private void responsePropertyNotFound(HttpServletRequest request,
                                           HttpServletResponse response) throws IOException {
         String propertyKey = getPropertyKey(request);
-        response.setContentType(CONTENT_TYPE);
+        response.setContentType(CONTENT_TYPE_TEXT);
         response.setStatus(HttpServletResponse.SC_NOT_FOUND);
         PrintWriter out = response.getWriter();
         out.println("Property not found for key '" + propertyKey + '\'');
@@ -172,7 +173,7 @@ public class PropertyServlet extends HttpServlet {
 
 
     private void responseNoPropertyKey(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        response.setContentType(CONTENT_TYPE);
+        response.setContentType(CONTENT_TYPE_TEXT);
         response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
         String url = getAbsoluteUrl(request);
         PrintWriter out = response.getWriter();
@@ -180,9 +181,9 @@ public class PropertyServlet extends HttpServlet {
         out.println();
         out.println("Please, specify needed property key in format:");
         out.println("- /<property_key> to get value by <property_key>");
-        out.println("- /env/<env_property_key> for environment properties");
+        out.println("- /env/<env_property_key> prepend with /env for environment properties");
         out.println("- /<property_key_1>,<property_key_2> for multiple properties");
-        out.println("- /json/<property_key_1>,<property_key_2> for json format");
+        out.println("- /json/<property_key_1>,<property_key_2> or /<property_key_1>,<property_key_2>?json for json format");
         out.close();
     }
 
