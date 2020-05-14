@@ -27,6 +27,8 @@
     <javalin.version>3.8.0</javalin.version>
 
     <!-- plugins -->
+    <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
+    <maven-shade-plugin.version>3.2.3</maven-shade-plugin.version>
     <git-commit-id-plugin.version>4.0.0</git-commit-id-plugin.version>
   </properties>
 
@@ -69,6 +71,34 @@
   <build>
     <finalName>property-service-client</finalName>
     <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>${maven-shade-plugin.version}</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+        <version>${maven-source-plugin.version}</version>
+        <executions>
+          <execution>
+            <id>attach-sources</id>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
       <!-- generate git.properties -->
       <plugin>
         <groupId>pl.project13.maven</groupId>

@@ -4,7 +4,7 @@ import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
+import java.net.ConnectException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -97,7 +97,9 @@ public class PropertyServiceClient {
 
             logger.debug("result for url '{}' is: {}", urlString, result);
             return result;
-        } catch (IOException e) {
+        } catch (ConnectException e) {
+            throw new PropertyServiceClientException("Could not connect to property service with url `"+urlString+'\'', e);
+        } catch (Exception e) {
             throw new PropertyServiceClientException(e);
         }
     }
