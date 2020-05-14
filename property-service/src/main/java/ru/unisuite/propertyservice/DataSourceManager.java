@@ -6,6 +6,14 @@ import javax.naming.NamingException;
 import javax.sql.DataSource;
 
 class DataSourceManager {
+    private static final String DATA_SOURCE_JNDI_NAME = "jdbc/ds_basic";
+
+    private DataSourceManager(){}
+
+    static DataSource lookup() {
+        return lookup(DATA_SOURCE_JNDI_NAME);
+    }
+
     static DataSource lookup(String jndiName) {
             try {
                 return lookupDataSourceInternal(jndiName, false);

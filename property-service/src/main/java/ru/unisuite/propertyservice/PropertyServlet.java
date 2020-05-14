@@ -1,37 +1,25 @@
 package ru.unisuite.propertyservice;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-
-import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
 import javax.sql.DataSource;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 @WebServlet("/*")
 public class PropertyServlet extends HttpServlet {
-    //@formatter:off
-    private static final String CONTENT_TYPE_TEXT = "text/plain;charset=UTF-8"
-        , CONTENT_TYPE_JSON = "application/json"
-        , DATA_SOURCE = "jdbc/ds_basic"
-        , DELIMITER = ","
-        , PROPERTY_QUERY = "select to_char(wpms_env_wp.get_property(?)) as property_value from dual"
-        , ENV_PROPERTY_QUERY = "select p_environment_.get_ve_us_text(?) as property_value from dual";
-    //@formatter:on
-
-    @Override
-    public void init(ServletConfig config) throws ServletException {
-        super.init(config);
-    }
+    private static final String CONTENT_TYPE_TEXT = "text/plain;charset=UTF-8";
+    private static final String CONTENT_TYPE_JSON = "application/json;charset=UTF-8";
+    private static final String PROPERTY_QUERY = "select to_char(wpms_env_wp.get_property(?)) as property_value from dual";
+    private static final String ENV_PROPERTY_QUERY = "select p_environment_.get_ve_us_text(?) as property_value from dual";
+    private static final String DELIMITER = ",";
 
     @Override
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -54,7 +42,7 @@ public class PropertyServlet extends HttpServlet {
         PreparedStatement stmt = null;
         ResultSet rs = null;
         try {
-            DataSource dataSource = DataSourceManager.lookup(DATA_SOURCE);
+            DataSource dataSource = DataSourceManager.lookup();
             con = dataSource.getConnection();
 
             String query = environmentProperty ? ENV_PROPERTY_QUERY : PROPERTY_QUERY;
