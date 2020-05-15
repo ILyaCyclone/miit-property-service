@@ -22,9 +22,11 @@ public class PropertyServiceClient {
     private final String propertyServiceUrl;
 
     public PropertyServiceClient() {
-        this(System.getenv(BASE_URL_ENV_NAME) != null
-                ? System.getenv(BASE_URL_ENV_NAME)
-                : System.getProperty(BASE_URL_PROPERTY_NAME));
+        // Spring prioritizes system properties over environment variables, 12factor - the opposite
+        // let's do Spring style
+        this(System.getProperty(BASE_URL_PROPERTY_NAME) != null
+                ? System.getProperty(BASE_URL_PROPERTY_NAME)
+                : System.getenv(BASE_URL_ENV_NAME));
     }
 
     public PropertyServiceClient(String propertyServiceBaseUrl) {

@@ -20,11 +20,12 @@
     <!--<json-org.version>20190722</json-org.version>-->
 
     <!-- tools -->
-    <logback.version>1.2.3</logback.version>
+    <slf4j.version>1.7.25</slf4j.version>
 
     <!-- testing -->
     <junit-jupiter.version>5.4.0</junit-jupiter.version>
     <javalin.version>3.8.0</javalin.version>
+    <logback.version>1.2.3</logback.version>
 
     <!-- plugins -->
     <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
@@ -47,9 +48,10 @@
 
     <!-- tools -->
     <dependency>
-      <groupId>ch.qos.logback</groupId>
-      <artifactId>logback-classic</artifactId>
-      <version>${logback.version}</version>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>${slf4j.version}</version>
+      <scope>compile</scope>
     </dependency>
 
     <!-- testing -->
@@ -57,6 +59,13 @@
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter</artifactId>
       <version>${junit-jupiter.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+      <version>${logback.version}</version>
       <scope>test</scope>
     </dependency>
 

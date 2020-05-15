@@ -11,10 +11,19 @@ public class InitTest {
 
     @Test
     void canBeCreatedWithSystemProperty() {
-        System.setProperty("ru.unisuite.propertyclient.baseurl", "http://zzz");
-        PropertyServiceClient propertyServiceClient = new PropertyServiceClient();
-        Assertions.assertEquals("http://zzz", propertyServiceClient.getPropertyServiceUrl());
-        System.setProperty("ru.unisuite.propertyclient.baseurl", "");
+        final String propertyName = "ru.unisuite.propertyclient.baseurl";
+        final String beforePropertyValue = System.getProperty(propertyName);
+        System.setProperty(propertyName, "http://zzz");
+        try {
+            PropertyServiceClient propertyServiceClient = new PropertyServiceClient();
+            Assertions.assertEquals("http://zzz", propertyServiceClient.getPropertyServiceUrl());
+        } finally {
+            if (beforePropertyValue != null) {
+                System.setProperty(propertyName, beforePropertyValue);
+            } else {
+                System.clearProperty(propertyName);
+            }
+        }
     }
 
     @Test
