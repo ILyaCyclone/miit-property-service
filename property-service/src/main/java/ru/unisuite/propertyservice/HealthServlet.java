@@ -11,10 +11,14 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 @WebServlet("/health")
 public class HealthServlet extends HttpServlet {
+    private static final Logger logger = Logger.getLogger(HealthServlet.class.getName());
 
+    //@formatter:off
     private static final String FORMAT =
             "{" +
               "\"status\": \"%s\"," +
@@ -24,22 +28,31 @@ public class HealthServlet extends HttpServlet {
                 "}" +
               "}" +
             "}";
+    //@formatter:on
 
-    private static final String UP = "UP";
-    private static final String DOWN = "DOWN";
+    private enum Status {
+        UP, DOWN, CHECK_FAILED
+    }
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        boolean applicationStatusIsUp = true;
-        boolean databaseStatusIsUp = checkDatabaseIsUp();
+        Status applicationStatus = Status.UP;
 
-        resp.getWriter().print(String.format(FORMAT, (applicationStatusIsUp?UP:DOWN), (databaseStatusIsUp?UP:DOWN)));
+        Status databaseStatus;
+        try {
+            databaseStatus = checkDatabaseIsUp() ? Status.UP : Status.DOWN;
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Could not check database status", e);
+            databaseStatus = Status.CHECK_FAILED;
+        }
+
+        resp.getWriter().print(String.format(FORMAT, applicationStatus, databaseStatus));
     }
 
     /**
      * assuming it is Oracle DB
      */
-    private boolean checkDatabaseIsUp() {
+    private boolean checkDatabaseIsUp() throws SQLException {
         DataSource dataSource = DataSourceManager.lookup();
         try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement("SELECT 'Hello' from DUAL");
@@ -47,9 +60,6 @@ public class HealthServlet extends HttpServlet {
         ) {
             rs.next();
             return rs.getString(1).equals("Hello");
-        } catch (Exception e) {
-            e.printStackTrace();
         }
-        return false;
     }
 }

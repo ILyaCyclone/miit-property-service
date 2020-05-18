@@ -12,13 +12,17 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 @WebServlet("/*")
 public class PropertyServlet extends HttpServlet {
+    private static final Logger logger = Logger.getLogger(PropertyServlet.class.getName());
+
     private static final String CONTENT_TYPE_TEXT = "text/plain;charset=UTF-8";
     private static final String CONTENT_TYPE_JSON = "application/json;charset=UTF-8";
-    private static final String PROPERTY_QUERY = "select to_char(wpms_env_wp.get_property(?)) as property_value from dual";
-    private static final String ENV_PROPERTY_QUERY = "select p_environment_.get_ve_us_text(?) as property_value from dual";
+    private static final String PROPERTY_QUERY = "select to_char(wpms_env_wp.get_property(?)) from dual";
+    private static final String ENV_PROPERTY_QUERY = "select p_environment_.get_ve_us_text(?) from dual";
     private static final String DELIMITER = ",";
 
     @Override
@@ -59,11 +63,11 @@ public class PropertyServlet extends HttpServlet {
                         return;
 
                     }
-                    result = escape(result);
+
                     if (!json) {
                         propertyValue = result;
                     } else {
-                        propertyValue = "{\"" + propertyKey + "\" : \"" + result + "\"}";
+                        propertyValue = "{\"" + propertyKey + "\": \"" + escapeForJson(result) + "\"}";
                     }
                 }
             } else {
@@ -86,17 +90,22 @@ public class PropertyServlet extends HttpServlet {
                     if (i > 0) {
                         sb.append(DELIMITER);
                     }
-                    String result = rs.getString("property_value");
-                    if (result == null) {
-                        result = "";
-                    }
-                    result = escape(result);
+                    String result = rs.getString(1);
 
                     if (!json) {
-                        result = escapeDelimiter(result);
+                        if (result == null) {
+                            result = "";
+                        }
+                        result = escapeForCsv(result);
                         sb.append(result);
                     } else {
-                        sb.append('"' + propertyKeys[i] + "\" : \"" + result + '"');
+                        // csv
+                        sb.append('"' + propertyKeys[i] + "\": ");
+                        if (result != null) {
+                            sb.append('"' + escapeForJson(result) + '"');
+                        } else {
+                            sb.append("null");
+                        }
                     }
                     i++;
                 }
@@ -107,7 +116,9 @@ public class PropertyServlet extends HttpServlet {
             }
 
         } catch (Exception e) {
-            throw new RuntimeException("PropertyService failed for url '" + url + '\'', e);
+            logger.log(Level.SEVERE, "Could not get properties for url '" + url + '\'', e);
+            // TODO reply with appropriate format
+            throw new RuntimeException("Could not get properties for url '" + url + '\'', e);
         } finally {
             if (rs != null) {
                 try {
@@ -119,14 +130,14 @@ public class PropertyServlet extends HttpServlet {
             if (stmt != null) {
                 try {
                     stmt.close();
-                } catch (Exception ex) {
+                } catch (SQLException ex) {
                 }
             }
 
             if (con != null) {
                 try {
                     con.close();
-                } catch (Exception ex) {
+                } catch (SQLException ex) {
                 }
             }
         }
@@ -137,16 +148,15 @@ public class PropertyServlet extends HttpServlet {
         out.close();
     }
 
-
-    private String escape(String s) {
-        return s.replaceAll("\"", "\\\\\"")
-                .replaceAll("\n", "")
-                .replaceAll("\r", "")
-                .replaceAll("\t", "");
+    private String escapeForCsv(String s) {
+        if (s == null) return null;
+        return s.replaceAll("\\" + DELIMITER, "\\\\" + DELIMITER); // aa,bb --> aa\,bb
     }
 
-    private String escapeDelimiter(String s) {
-        return s.replaceAll("\\"+DELIMITER, "\\\\" + DELIMITER); // aa,bb --> aa\,bb
+    private String escapeForJson(String s) {
+        if (s == null) return null;
+        return s.replaceAll("\\\"", "\\\\\"")
+                .replaceAll("\n", "\\\\n");
     }
 
     private void responsePropertyNotFound(HttpServletRequest request,
