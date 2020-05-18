@@ -60,7 +60,7 @@ public class PropertyServiceClient {
     }
 
     public String getProperty(PropertyType propertyType, String propertyName) {
-        return fetchFromPropertyService(propertyType, OutputFormat.COMMA_SEPARATED, propertyName);
+        return fetchFromPropertyService(propertyType, OutputFormat.CSV, propertyName);
     }
 
 
@@ -74,11 +74,11 @@ public class PropertyServiceClient {
 
 
     public Map<String, String> getProperties(PropertyType propertyType, String... propertyNames) {
-        String output = fetchFromPropertyService(propertyType, OutputFormat.COMMA_SEPARATED, propertyNames);
+        String output = fetchFromPropertyService(propertyType, OutputFormat.CSV, propertyNames);
         String[] values = output.split("(?<!\\\\),"); // separate by , but not by \,
         return Collections.unmodifiableMap(IntStream.range(0, values.length)
                 .collect(HashMap::new, (map, i) -> map.put(propertyNames[i]
-                        , values[i].length() == 0 ? null : values[i].replaceAll("\\\\,", ",")) // replace \, with ,
+                        , values[i].length() == 0 ? null : unescapeCsv(values[i]))
                         , HashMap::putAll));
     }
 
@@ -104,6 +104,10 @@ public class PropertyServiceClient {
         } catch (Exception e) {
             throw new PropertyServiceClientException(e);
         }
+    }
+
+    private String unescapeCsv(String value) {
+        return value.replaceAll("\\\\,", ","); // replace \, with ,
     }
 
     private static String propertyNameToEnvName(String s) {

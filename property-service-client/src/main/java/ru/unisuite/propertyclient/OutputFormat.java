@@ -1,7 +1,7 @@
 package ru.unisuite.propertyclient;
 
 public enum OutputFormat {
-    COMMA_SEPARATED(""), JSON("/json");
+    CSV(""), JSON("/json");
 
     private final String pathPart;
 
