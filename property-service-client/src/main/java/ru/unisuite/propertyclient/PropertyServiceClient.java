@@ -5,7 +5,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.ConnectException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
@@ -30,6 +29,10 @@ public class PropertyServiceClient {
     }
 
     public PropertyServiceClient(String propertyServiceBaseUrl) {
+        this(propertyServiceBaseUrl, new DefaultPropertyServiceHealthCheck());
+    }
+
+    public PropertyServiceClient(String propertyServiceBaseUrl, PropertyServiceHealthCheck propertyServiceHealthCheck) {
         if (propertyServiceBaseUrl == null || propertyServiceBaseUrl.trim().length() == 0) {
             throw new IllegalArgumentException("propertyServiceBaseUrl cannot be empty");
         }
@@ -38,12 +41,7 @@ public class PropertyServiceClient {
             propertyServiceBaseUrl = propertyServiceBaseUrl.substring(0, propertyServiceBaseUrl.length() - 1);
         }
 
-        try {
-            new URL(propertyServiceBaseUrl); // validate URL
-        } catch (MalformedURLException e) {
-            throw new PropertyServiceClientException("propertyServiceBaseUrl is not set correctly: '"
-                    + propertyServiceBaseUrl + "'. Should be set to property service absolute url.");
-        }
+        propertyServiceHealthCheck.check(propertyServiceBaseUrl);
 
         this.propertyServiceUrl = propertyServiceBaseUrl;
 

@@ -1,6 +1,7 @@
 package ru.unisuite.propertyclient;
 
 import io.javalin.Javalin;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -11,10 +12,11 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class PropertyServiceClientTest {
 
-    static PropertyServiceClient propertyServiceClient;
+    private static Javalin server;
+    private static PropertyServiceClient propertyServiceClient;
 
     @BeforeAll
-    static void mockServer() {
+    static void startMockServer() {
         Map<String, String> serverResponses = new HashMap<>();
         serverResponses.put("/property1", "property1 value");
         serverResponses.put("/property1,property2", "property1 value,property2 value");
@@ -23,11 +25,17 @@ class PropertyServiceClientTest {
         serverResponses.put("/env/5000", "org name");
         serverResponses.put("/env/5000,5001", "org name,123\\,456");
 
-        Javalin server = Javalin.create().start();
+        server = Javalin.create().start();
         int serverPort = server.port();
         serverResponses.forEach((request, response) -> server.get(request, ctx -> ctx.result(response)));
 
-        propertyServiceClient = new PropertyServiceClient("http://localhost:" + serverPort);
+        propertyServiceClient = new PropertyServiceClient("http://localhost:" + serverPort
+                , new NoopPropertyServiceHealthCheck());
+    }
+
+    @AfterAll
+    static void stopMockServer() {
+        server.stop();
     }
 
     @Test

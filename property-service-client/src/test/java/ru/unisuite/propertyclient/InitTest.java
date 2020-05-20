@@ -1,6 +1,6 @@
 package ru.unisuite.propertyclient;
 
-import org.junit.jupiter.api.Assertions;
+import io.javalin.Javalin;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
 
@@ -15,8 +15,9 @@ public class InitTest {
         final String beforePropertyValue = System.getProperty(propertyName);
         System.setProperty(propertyName, "http://zzz");
         try {
-            PropertyServiceClient propertyServiceClient = new PropertyServiceClient();
-            Assertions.assertEquals("http://zzz", propertyServiceClient.getPropertyServiceUrl());
+            // this is expected to fail because of service health check, but we actually check that system property is read
+            PropertyServiceClientException exception = assertThrows(PropertyServiceClientException.class, PropertyServiceClient::new);
+            assertEquals("Could not check property service health on url 'http://zzz'", exception.getMessage());
         } finally {
             if (beforePropertyValue != null) {
                 System.setProperty(propertyName, beforePropertyValue);
@@ -39,6 +40,24 @@ public class InitTest {
         Exception exception = assertThrows(PropertyServiceClientException.class, () -> new PropertyServiceClient("zzz"));
         assertEquals("propertyServiceBaseUrl is not set correctly: 'zzz'. Should be set to property service absolute url."
                 , exception.getMessage());
+    }
+
+    @Test
+    void performsHealthCheck() {
+        Javalin server = Javalin.create().start();
+        int serverPort = server.port();
+        server.get("/health", ctx -> ctx.result("{\"application\": \"Tetris\"}"));
+
+        try {
+            PropertyServiceClientException exception = assertThrows(PropertyServiceClientException.class
+                    , () -> new PropertyServiceClient("http://localhost:" + serverPort));
+
+            assertEquals("Property service health check failed: application `property-service` expected, but met `Tetris'."
+                    , exception.getMessage());
+        } finally {
+            server.stop();
+        }
+
     }
 
 }
