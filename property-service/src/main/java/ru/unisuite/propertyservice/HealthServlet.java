@@ -21,6 +21,7 @@ public class HealthServlet extends HttpServlet {
     //@formatter:off
     private static final String FORMAT =
             "{" +
+              "\"application\": \"property-service\"," +
               "\"status\": \"%s\"," +
               "\"components\": {" +
                 "\"db\": {" +

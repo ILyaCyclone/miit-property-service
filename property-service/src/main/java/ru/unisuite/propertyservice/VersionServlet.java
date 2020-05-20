@@ -22,6 +22,7 @@ public class VersionServlet extends HttpServlet {
     //@formatter:off
     private static final String FORMAT =
             "{" +
+              "\"application\": \"property-service\"," +
               "\"build\": {" +
                 "\"time\": \"%s\"" +
               "}," +
