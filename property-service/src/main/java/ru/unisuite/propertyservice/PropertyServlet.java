@@ -155,8 +155,9 @@ public class PropertyServlet extends HttpServlet {
 
     private String escapeForJson(String s) {
         if (s == null) return null;
-        return s.replaceAll("\\\"", "\\\\\"")
-                .replaceAll("\n", "\\\\n");
+        return s.replaceAll("\\\"", "\\\\\"") // escape double quotes
+                .replaceAll("\n", "\\\\n")
+                .replaceAll("\t", "\\\\t"); // tabs are not allowed in json values
     }
 
     private void responsePropertyNotFound(HttpServletRequest request,
