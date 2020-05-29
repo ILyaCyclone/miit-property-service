@@ -1,0 +1,12 @@
+Please, specify needed property key in format:
+
+- /property1 - to get value by key 'property1'
+- /property1,property2 - for multiple properties in csv format
+  Comma symbols within values are escaped with backslash: , -> \,
+
+- /env/propertyenv1 - prepend with /env for environment properties
+- /env/propertyenv1,propertyenv2 - for multiple environment properties in csv format
+
+- /json/property1,property2 or /property1,property2?json - prepend with /json or append ?json json format
+- /env/json/propertyenv1,propertyenv2 or /env/propertyenv1,propertyenv2?json - for multiple environment properties in json format
+  Escaping rules for json format: double quote " -> \", newline -> \n, tab -> \t

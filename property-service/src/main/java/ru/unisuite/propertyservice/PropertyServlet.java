@@ -1,19 +1,21 @@
 package ru.unisuite.propertyservice;
 
+import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 @WebServlet("/*")
 public class PropertyServlet extends HttpServlet {
@@ -25,13 +27,25 @@ public class PropertyServlet extends HttpServlet {
     private static final String ENV_PROPERTY_QUERY = "select p_environment_.get_ve_us_text(?) from dual";
     private static final String DELIMITER = ",";
 
+    private String help;
+
+    @Override
+    public void init(ServletConfig config) throws ServletException {
+        try (InputStream inputStream = config.getServletContext().getResourceAsStream("/help.txt")) {
+            this.help = new BufferedReader(new InputStreamReader(inputStream
+                    , StandardCharsets.UTF_8)).lines().collect(Collectors.joining("\n"));
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Could not read help file", e);
+        }
+    }
+
     @Override
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String url = getAbsoluteUrl(request);
 
         String propertyKey = getPropertyKey(request);
         if (propertyKey == null || propertyKey.trim().length() < 1) {
-            responseNoPropertyKey(request, response);
+            respondWithHelp(request, response);
             return;
         }
 
@@ -171,18 +185,11 @@ public class PropertyServlet extends HttpServlet {
     }
 
 
-    private void responseNoPropertyKey(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    private void respondWithHelp(HttpServletRequest request, HttpServletResponse response) throws IOException {
         response.setContentType(CONTENT_TYPE_TEXT);
-        response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-        String url = getAbsoluteUrl(request);
+        response.setStatus(HttpServletResponse.SC_OK);
         PrintWriter out = response.getWriter();
-        out.println("No property key specified in url '" + url + '\'');
-        out.println();
-        out.println("Please, specify needed property key in format:");
-        out.println("- /<property_key> to get value by <property_key>");
-        out.println("- /env/<env_property_key> prepend with /env for environment properties");
-        out.println("- /<property_key_1>,<property_key_2> for multiple properties");
-        out.println("- /json/<property_key_1>,<property_key_2> or /<property_key_1>,<property_key_2>?json for json format");
+        out.println(help);
         out.close();
     }
 
