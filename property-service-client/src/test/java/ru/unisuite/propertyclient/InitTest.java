@@ -1,8 +1,10 @@
 package ru.unisuite.propertyclient;
 
-import io.javalin.Javalin;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIf;
+import org.junitpioneer.jupiter.ClearEnvironmentVariable;
+import org.junitpioneer.jupiter.ClearSystemProperty;
+import org.junitpioneer.jupiter.SetEnvironmentVariable;
+import org.junitpioneer.jupiter.SetSystemProperty;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -10,26 +12,32 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class InitTest {
 
     @Test
+    @SetSystemProperty(key = PropertyResolver.BASE_URL_SYSTEM_PROPERTY_NAME, value = "http://zzz")
+    @ClearEnvironmentVariable(key = PropertyResolver.BASE_URL_ENV_VARIABLE_NAME)
     void canBeCreatedWithSystemProperty() {
-        final String propertyName = "ru.unisuite.propertyclient.baseurl";
-        final String beforePropertyValue = System.getProperty(propertyName);
-        System.setProperty(propertyName, "http://zzz");
-        try {
-            // this is expected to fail because of service health check, but we actually check that system property is read
-            PropertyServiceClientException exception = assertThrows(PropertyServiceClientException.class, PropertyServiceClient::new);
-            assertEquals("Could not check property service health on url 'http://zzz'", exception.getMessage());
-        } finally {
-            if (beforePropertyValue != null) {
-                System.setProperty(propertyName, beforePropertyValue);
-            } else {
-                System.clearProperty(propertyName);
-            }
-        }
+        PropertyServiceClient propertyServiceClient = new PropertyServiceClient(new NoopPropertyServiceHealthCheck());
+        assertEquals("http://zzz", propertyServiceClient.getPropertyServiceUrl());
     }
 
     @Test
-    @EnabledIf(value = "systemEnvironment.get('RU_UNISUITE_PROPERTYCLIENT_BASEURL') == null"
-            , reason = "skip because propertyServiceBaseUrl is set by environment variable")
+    @ClearSystemProperty(key = PropertyResolver.BASE_URL_SYSTEM_PROPERTY_NAME)
+    @SetEnvironmentVariable(key = PropertyResolver.BASE_URL_ENV_VARIABLE_NAME, value = "http://zzz")
+    void canBeCreatedWithEnvVariable() {
+        PropertyServiceClient propertyServiceClient = new PropertyServiceClient(new NoopPropertyServiceHealthCheck());
+        assertEquals("http://zzz", propertyServiceClient.getPropertyServiceUrl());
+    }
+
+    @Test
+    @SetSystemProperty(key = PropertyResolver.BASE_URL_SYSTEM_PROPERTY_NAME, value = "http://zzz")
+    @SetEnvironmentVariable(key = PropertyResolver.BASE_URL_ENV_VARIABLE_NAME, value = "http://aaa")
+    void systemPropertyPriorityOverEnvVariable() {
+        PropertyServiceClient propertyServiceClient = new PropertyServiceClient(new NoopPropertyServiceHealthCheck());
+        assertEquals("http://zzz", propertyServiceClient.getPropertyServiceUrl());
+    }
+
+    @Test
+    @ClearEnvironmentVariable(key = PropertyResolver.BASE_URL_ENV_VARIABLE_NAME)
+    @ClearSystemProperty(key = PropertyResolver.BASE_URL_SYSTEM_PROPERTY_NAME)
     void throwsExceptionIfCreatedWithoutSettingUrl() {
         Exception exception = assertThrows(IllegalArgumentException.class, PropertyServiceClient::new);
         assertEquals("propertyServiceBaseUrl cannot be empty", exception.getMessage());
@@ -41,23 +49,4 @@ public class InitTest {
         assertEquals("propertyServiceBaseUrl is not set correctly: 'zzz'. Should be set to property service absolute url."
                 , exception.getMessage());
     }
-
-    @Test
-    void performsHealthCheck() {
-        Javalin server = Javalin.create().start();
-        int serverPort = server.port();
-        server.get("/health", ctx -> ctx.result("{\"application\": \"Tetris\"}"));
-
-        try {
-            PropertyServiceClientException exception = assertThrows(PropertyServiceClientException.class
-                    , () -> new PropertyServiceClient("http://localhost:" + serverPort));
-
-            assertEquals("Property service health check failed: application `property-service` expected, but met `Tetris'."
-                    , exception.getMessage());
-        } finally {
-            server.stop();
-        }
-
-    }
-
 }

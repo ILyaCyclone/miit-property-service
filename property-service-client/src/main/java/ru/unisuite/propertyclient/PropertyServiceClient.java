@@ -15,21 +15,18 @@ import java.util.stream.IntStream;
 public class PropertyServiceClient {
     private static final Logger logger = LoggerFactory.getLogger(PropertyServiceClient.class);
 
-    private static final String BASE_URL_PROPERTY_NAME = "ru.unisuite.propertyclient.baseurl";
-    private static final String BASE_URL_ENV_NAME = propertyNameToEnvName(BASE_URL_PROPERTY_NAME);
-
     private final String propertyServiceUrl;
 
     public PropertyServiceClient() {
-        // Spring prioritizes system properties over environment variables, 12factor - the opposite
-        // let's do Spring style
-        this(System.getProperty(BASE_URL_PROPERTY_NAME) != null
-                ? System.getProperty(BASE_URL_PROPERTY_NAME)
-                : System.getenv(BASE_URL_ENV_NAME));
+        this(PropertyResolver.resolvePropertyServiceBaseUrl());
     }
 
     public PropertyServiceClient(String propertyServiceBaseUrl) {
         this(propertyServiceBaseUrl, new DefaultPropertyServiceHealthCheck());
+    }
+
+    public PropertyServiceClient(PropertyServiceHealthCheck propertyServiceHealthCheck) {
+        this(PropertyResolver.resolvePropertyServiceBaseUrl(), propertyServiceHealthCheck);
     }
 
     public PropertyServiceClient(String propertyServiceBaseUrl, PropertyServiceHealthCheck propertyServiceHealthCheck) {
@@ -106,9 +103,5 @@ public class PropertyServiceClient {
 
     private String unescapeCsv(String value) {
         return value.replaceAll("\\\\,", ","); // replace \, with ,
-    }
-
-    private static String propertyNameToEnvName(String s) {
-        return s.toUpperCase().replace('.', '_');
     }
 }

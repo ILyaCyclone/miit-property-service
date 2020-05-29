@@ -31,6 +31,7 @@
     <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
     <maven-shade-plugin.version>3.2.3</maven-shade-plugin.version>
     <git-commit-id-plugin.version>4.0.0</git-commit-id-plugin.version>
+    <junit-pioneer.version>0.6.0</junit-pioneer.version>
   </properties>
 
   <dependencies>
@@ -63,11 +64,24 @@
     </dependency>
 
     <dependency>
+      <groupId>org.junit-pioneer</groupId>
+      <artifactId>junit-pioneer</artifactId>
+      <version>${junit-pioneer.version}</version>
+    </dependency>
+
+    <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-classic</artifactId>
       <version>${logback.version}</version>
       <scope>test</scope>
     </dependency>
+
+    <!--    <dependency>-->
+    <!--      <groupId>uk.org.lidalia</groupId>-->
+    <!--      <artifactId>slf4j-test</artifactId>-->
+    <!--      <version>1.2.0</version>-->
+    <!--      <scope>test</scope>-->
+    <!--    </dependency>-->
 
     <dependency>
       <groupId>io.javalin</groupId>
