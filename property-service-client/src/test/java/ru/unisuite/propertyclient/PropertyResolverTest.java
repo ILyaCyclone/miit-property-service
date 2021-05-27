@@ -28,7 +28,8 @@ class PropertyResolverTest {
     @SetSystemProperty(key = PropertyResolver.BASE_URL_SYSTEM_PROPERTY_NAME, value = "http://zzz")
     @SetEnvironmentVariable(key = PropertyResolver.BASE_URL_ENV_VARIABLE_NAME, value = "http://aaa")
     void systemPropertyPriorityOverEnvVariable() {
-        PropertyServiceClient propertyServiceClient = new PropertyServiceClient(new NoopPropertyServiceHealthCheck());
+        PropertyServiceClient propertyServiceClient =
+                PropertyServiceClient.builder().healthCheck(new NoopPropertyServiceHealthCheck()).build();
         assertEquals("http://zzz", propertyServiceClient.getPropertyServiceUrl());
     }
 

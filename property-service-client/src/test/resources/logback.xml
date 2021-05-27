@@ -6,7 +6,7 @@
     </encoder>
   </appender>
 
-  <logger name="ru.unisuite.propertyclient" level="DEBUG"/>
+  <logger name="ru.unisuite.propertyclient" level="WARN"/>
 
   <root level="WARN">
     <appender-ref ref="STDOUT"/>

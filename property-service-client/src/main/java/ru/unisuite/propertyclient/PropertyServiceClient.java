@@ -1,48 +1,52 @@
 package ru.unisuite.propertyclient;
 
-import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.ConnectException;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
+/**
+ * main client class
+ */
 public class PropertyServiceClient {
     private static final Logger logger = LoggerFactory.getLogger(PropertyServiceClient.class);
 
+    private static final Pattern CSV_SEPARATOR_PATTERN = Pattern.compile("(?<!\\\\),"); // separate by , but not by \,
+
     private final String propertyServiceUrl;
+    private final PropertyServiceFetch propertyServiceFetch;
+    private boolean cacheEnabled = false;
 
-    public PropertyServiceClient() {
-        this(PropertyResolver.resolvePropertyServiceBaseUrl());
+
+    public static PropertyServiceClient forPropertyServiceBaseUrl(String propertyServiceBaseUrl) {
+        return new PropertyServiceClientBuilder().propertyServiceUrl(propertyServiceBaseUrl).build();
     }
 
-    public PropertyServiceClient(String propertyServiceBaseUrl) {
-        this(propertyServiceBaseUrl, new DefaultPropertyServiceHealthCheck());
+    public static PropertyServiceClientBuilder builder() {
+        return new PropertyServiceClientBuilder();
     }
 
-    public PropertyServiceClient(PropertyServiceHealthCheck propertyServiceHealthCheck) {
-        this(PropertyResolver.resolvePropertyServiceBaseUrl(), propertyServiceHealthCheck);
+    public static PropertyServiceClientBuilder builder(String propertyServiceBaseUrl) {
+        return new PropertyServiceClientBuilder().propertyServiceUrl(propertyServiceBaseUrl);
     }
 
-    public PropertyServiceClient(String propertyServiceBaseUrl, PropertyServiceHealthCheck propertyServiceHealthCheck) {
-        if (propertyServiceBaseUrl == null || propertyServiceBaseUrl.trim().length() == 0) {
-            throw new IllegalArgumentException("propertyServiceBaseUrl cannot be empty");
-        }
-        if (propertyServiceBaseUrl.endsWith("/")) {
-            // remove trailing slash
-            propertyServiceBaseUrl = propertyServiceBaseUrl.substring(0, propertyServiceBaseUrl.length() - 1);
-        }
+    public static PropertyServiceClient defaultInstance() {
+        return new PropertyServiceClientBuilder().build();
+    }
 
-        propertyServiceHealthCheck.check(propertyServiceBaseUrl);
+    PropertyServiceClient(String propertyServiceBaseUrl, PropertyServiceHealthCheck healthCheck
+            , PropertyServiceFetch propertyServiceFetch) {
+
+        healthCheck.check(propertyServiceBaseUrl);
 
         this.propertyServiceUrl = propertyServiceBaseUrl;
+        this.propertyServiceFetch = propertyServiceFetch;
 
-        logger.debug("Property service client is created with propertyServiceBaseUrl: {}", propertyServiceBaseUrl);
+        logger.info("Property service client is created with base url: {}", propertyServiceBaseUrl);
     }
 
 
@@ -70,12 +74,26 @@ public class PropertyServiceClient {
 
     public Map<String, String> getProperties(PropertyType propertyType, String... propertyNames) {
         String output = fetchFromPropertyService(propertyType, OutputFormat.CSV, propertyNames);
-        String[] values = output.split("(?<!\\\\),"); // separate by , but not by \,
+        String[] values = CSV_SEPARATOR_PATTERN.split(output);
         return Collections.unmodifiableMap(IntStream.range(0, values.length)
                 .collect(HashMap::new, (map, i) -> map.put(propertyNames[i]
                         , values[i].length() == 0 ? null : unescapeCsv(values[i]))
                         , HashMap::putAll));
     }
+
+    public boolean isCacheEnabled() {
+        return cacheEnabled;
+    }
+
+    public void invalidateCache() {
+        if (isCacheEnabled()) {
+            ((PropertyServiceFetchCached) propertyServiceFetch).invalidateCache();
+        } else {
+            logger.warn("PropertyServiceClient::invalidateCache has no effect as cache is not applied");
+        }
+    }
+
+    // info
 
     public String getPropertyServiceUrl() {
         return this.propertyServiceUrl;
@@ -83,25 +101,17 @@ public class PropertyServiceClient {
 
 
 
+    void setCacheEnabled(boolean cacheEnabled) {
+        this.cacheEnabled = cacheEnabled;
+    }
+
     private String fetchFromPropertyService(PropertyType propertyType, OutputFormat outputFormat, String... propertyNames) {
-        String urlString = propertyServiceUrl + outputFormat.getPathPart() + propertyType.getPathPart()
-                + "/" + String.join(",", propertyNames);
-        logger.debug("requesting url: {}", urlString);
-
-        try {
-            //TODO configure timeouts
-            String result = IOUtils.toString(new URL(urlString), StandardCharsets.UTF_8);
-
-            logger.debug("result for url '{}' is: {}", urlString, result);
-            return result;
-        } catch (ConnectException e) {
-            throw new PropertyServiceClientException("Could not connect to property service with url `"+urlString+'\'', e);
-        } catch (Exception e) {
-            throw new PropertyServiceClientException(e);
-        }
+        PropertyServiceFetchKey fetchKey = new PropertyServiceFetchKey(propertyType, outputFormat, propertyNames);
+        return propertyServiceFetch.fetchFromPropertyService(fetchKey);
     }
 
     private String unescapeCsv(String value) {
-        return value.replaceAll("\\\\,", ","); // replace \, with ,
+        return value.replace("\\,", ","); // replace \, with ,
     }
+
 }

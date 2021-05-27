@@ -14,7 +14,7 @@ class DefaultPropertyServiceHealthCheckTest {
     @Test
     void failsIfMalformedUrl() {
         PropertyServiceClientException exception = assertThrows(PropertyServiceClientException.class
-                , () -> new PropertyServiceClient("zzz"));
+                , () -> PropertyServiceClient.forPropertyServiceBaseUrl("zzz"));
 
         assertEquals("propertyServiceBaseUrl is not set correctly: 'zzz'. Should be set to property service absolute url."
                 , exception.getMessage());
@@ -34,7 +34,7 @@ class DefaultPropertyServiceHealthCheckTest {
 
         logger.addAppender(loggingAppender);
         try {
-            new PropertyServiceClient("http://localhost:" + serverPort);
+            PropertyServiceClient.forPropertyServiceBaseUrl("http://localhost:" + serverPort);
         } finally {
             server.stop();
         }
@@ -60,7 +60,7 @@ class DefaultPropertyServiceHealthCheckTest {
 
         logger.addAppender(loggingAppender);
         try {
-            new PropertyServiceClient("http://localhost:" + serverPort);
+            PropertyServiceClient.forPropertyServiceBaseUrl("http://localhost:" + serverPort);
         } finally {
             server.stop();
         }
